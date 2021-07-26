@@ -2,12 +2,16 @@
 using QueueManagement;
 using QueueManagement.Helpers;
 using System;
+using Microsoft.Extensions.Hosting;
+using MassTransit;
+using Receiver.Consumers;
+using System.Threading.Tasks;
 
 namespace Receiver
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Console.WriteLine("Starting connection to message queue");
             var queueConfiguration = new QueueManagementConfiguration
@@ -23,7 +27,9 @@ namespace Receiver
                 ServerUrl = "localhost",
                 VirtualHost = "/"
             };
-            var receiverQueueHelper = new ReceiverMessageHelper(queueConfiguration, new RabbitManagementAdapter(), new RabbiManagementHelper());
+
+            await CreateHostBuilder(args).Build().RunAsync();
+            //var receiverQueueHelper = new ReceiverMessageHelper(queueConfiguration, new RabbitManagementAdapter(), new RabbiManagementHelper());
 
             Console.WriteLine("Connection with message queue already ready!");
             string value = "";
@@ -35,9 +41,24 @@ namespace Receiver
 
                 value = value?.ToUpper();
             }
-
-
-
         }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services.AddMassTransit(x =>
+                    {
+                        x.AddConsumer<MessageConsumer>();
+
+                        x.UsingRabbitMq((context, cfg) =>
+                        {
+                            cfg.ConfigureEndpoints(context);
+                        });
+
+                    });
+
+                    services.AddMassTransitHostedService();
+                });
     }
 }

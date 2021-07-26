@@ -23,8 +23,6 @@ namespace Sender
                 {
                     services.AddMassTransit(x =>
                     {
-                        x.AddConsumer<MessageConsumer>();
-
                         x.UsingRabbitMq((context, cfg) =>
                         {
                             cfg.ConfigureEndpoints(context);
